@@ -1,3 +1,6 @@
+#include <stdio.h>
+#include <stdlib.h>
+
 /*
  * Load and stores the binary position of each trajectory frame. The frame_number
  * should be the maximum frame number and will be set to the actual after the call completes
@@ -9,9 +12,10 @@ long* load_traj_file_mapping(FILE* trajectory, unsigned int* frame_number, unsig
  * for each trajectory frame
  *
  */
-long* load_nlist_file_mapping(FILE* nlist, unsigned int max_frames, unsigned int** nlist_length);
+long* load_nlist_file_mapping(FILE* nlist, unsigned int max_frames, unsigned int n_particles, unsigned int** nlist_length);
 
 /*
- * Load a matrix in a file 
+ * Load a matrix in a file using given file and memory 
  */
 void load_matrix_part(FILE* mfile, double* matrix, unsigned int nrow, unsigned int ncol);
+void load_int_matrix_part(FILE* mfile, unsigned int* matrix, unsigned int nrow, unsigned int ncol);

@@ -26,7 +26,7 @@ all:
 	make openmp optimize lj_vverlet_anderson
 	make openmp optimize harmonic_vverlet_bussi
 	make openmp optimize soft_vverlet
-	clean
+	make clean
 
 all-debug:
 	make harmonic_vverlet
@@ -59,9 +59,11 @@ harmonic_force: harmonic_force.c force.h
 soft_force: soft_force.c force.h
 	$(CC) $(SUB_CFLAGS) soft_force.c
 
-
 lj_force: lj_force.c force.h
 	$(CC) $(SUB_CFLAGS) -DLJ lj_force.c
+
+force_match_util: force_match_util.c force_match_util.h
+	$(CC) $(SUB_CFLAGS) force_match_util.c
 
 anderson_thermostat: util.c util.h anderson_thermostat.c thermostat.h 
 	$(CC) $(SUB_CFLAGS) -DANDERSON anderson_thermostat.c
@@ -79,6 +81,12 @@ openmp: $(filter-out openmp, $(MAKECMDGOALS))
 optimize: CFLAGS += -march=native -Ofast -fmodulo-sched-allow-regmoves
 optimize: MAKE_EXE_FLAGS += -fwhole-program
 optimize: $(filter-out optimize, $(MAKECMDGOALS))
+
+force_match: PPFLAGS += -DLJ
+force_match: SUFFX = fm
+force_match: min_image lj_force nlist util cJSON force_match_util
+	$(CC) $(CFLAGS) $(PPFLAGS) $(MAKE_EXE_FLAGS) -o $@ $(UTIL_O) $(addsuffix _$(SUFFIX).o, $^) -lgsl -lblas -lm force_match.c
+	$(FINISH)
 
 soft_vverlet: SUFFIX = s
 soft_vverlet: PARAMS = soft
@@ -133,5 +141,5 @@ harmonic_vverlet_bussi: min_image_nopbc bussi_thermostat harmonic_force vverlet 
 
 
 clean: 
-	rm -f *.o
+	rm -f *.[o]
 

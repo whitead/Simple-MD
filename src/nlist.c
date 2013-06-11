@@ -111,21 +111,21 @@ void log_nlist(Nlist_Parameters* nlist,
 
   if(nlist->output_file) {
     unsigned int nlist_total, i, j, k;
-    for(nlist_totlal = i = 0; i < n_particles; i++)
+    for(nlist_total = i = 0; i < n_particles; i++)
       nlist_total += nlist->nlist_count[i];
     fprintf(nlist->output_file, "%ud %ud\n", nlist_total, time_stamp);
     for(i = 0; i < n_particles; i++) {
       fprintf(nlist->output_file, "%d ",nlist->nlist_count[i]);
     }
 
-    fprtinf(nlist->output_file, "\n");
+    fprintf(nlist->output_file, "\n");
 
     for(k = i = 0; i < n_particles; i++)
       for(j = 0; j < nlist->nlist_count[i]; j++)
 	fprintf(nlist->output_file, "%d ",nlist->nlist[k++]);
 
 
-    fprtinf(nlist->output_file, "\n");
+    fprintf(nlist->output_file, "\n");
 
   }
 

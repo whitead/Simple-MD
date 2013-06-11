@@ -1,22 +1,26 @@
+#include "force_match.h"
+
 int main(int argc, char* argv[]) {
 
   char* pfile = NULL;
 
   if(argc == 1) {
-    pfile = argc[1];
+    pfile = argv[1];
   }
 
   Run_Params* p = read_parameters(pfile);
 
-  int fm_loop(Run_Params* params);
+  fm_loop(p);
+
+  return 0;
 }
 
 
-int fm_loop(Run_Params* params) {
+void fm_loop(Run_Params* params) {
 
   unsigned int i;
 
-  FILE* traj_file = fopen(params->positions_file, "r");
+  FILE* traj_file = params->positions_file;
   if(!traj_file) {
     perror("Could not open trajectory file");
   }
@@ -28,7 +32,8 @@ int fm_loop(Run_Params* params) {
   long* traj_file_mapping = load_traj_file_mapping(traj_file, &frame_number, params->n_particles, params->n_dims);
   
   //get nlist file offsets
-  FILE* nlist_file = fopen(params->nlist_file, "r");
+  Nlist_Parameters* np =( (Nlist_Parameters*) ( (Lj_Parameters*) params->force_parameters)->nlist);
+  FILE* nlist_file = np->output_file;
   if(!nlist_file) {
     perror("Could not open nlist file");
   }
@@ -37,12 +42,10 @@ int fm_loop(Run_Params* params) {
   //load nlist from file and set-up variables
   unsigned int* nlist_lengths;
   long* nlist_file_mapping = load_nlist_file_mapping(nlist_file, frame_number, params->n_particles, &nlist_lengths);
-  unsinged int max_nlist_size = 0;
+  unsigned int max_nlist_size = 0;
   for(i = 0; i < frame_number; i++)
     if(nlist_lengths[i] > max_nlist_size)
       max_nlist_size = nlist_lengths[i];
-
-  Nlist_Parameters* np =( (Nlist_Parameters*) ( (Lj_Parameters*) params->force_parameters)->nlist)
 
   np->nlist_count = (unsigned int*) malloc(sizeof(unsigned int) * params->n_particles);
   np->nlist = (unsigned int*) malloc(sizeof(unsigned int) * max_nlist_size);
@@ -57,7 +60,7 @@ int fm_loop(Run_Params* params) {
 
     //load trjacetory frame
     fseek(traj_file, traj_file_mapping[i], SEEK_SET); //go to the frame in the file
-    load_matrix_part(traj_file, positions, params->n_particle, params->n_dims); //load the frame
+    load_matrix_part(traj_file, positions, params->n_particles, params->n_dims); //load the frame
 
     //load the neighbor list
     fseek(nlist_file, nlist_file_mapping[i], SEEK_SET);

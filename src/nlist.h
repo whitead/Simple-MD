@@ -50,8 +50,20 @@ void update_nlist(double* positions, double* box_size, unsigned int n_dims, unsi
 /* Constructs the structure. skin and rcut should NOT be their sqaures
  *
  */
-Nlist_Parameters* build_nlist_params(unsigned int n_dims, unsigned int n_particles, double* box_size, double skin, double rcut);
+Nlist_Parameters* build_nlist_params(unsigned int n_dims, 
+				     unsigned int n_particles, 
+				     double* box_size, 
+				     double skin, double rcut,
+				     FILE* output_file);
 
 void free_nlist(Nlist_Parameters* nlist);
+
+/* Write the nlist to an output file
+ *
+ */
+void log_nlist(Nlist_Parameters* nlist, 
+	       unsigned int time_stamp, 
+	       unsigned int n_particles);
+
 
 #endif

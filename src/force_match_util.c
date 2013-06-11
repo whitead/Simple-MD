@@ -51,13 +51,13 @@ long* load_traj_file_mapping(FILE* trajectory, unsigned int* frame_number, unsig
   double temp;
 
   //read all frames and store binary positions of the beginning of the frames
-  for(i = 0; i < max_frames; i++) {
+  for(i = 0; i < *frame_number; i++) {
     mapping[i] = ftell(trajectory);
     for(j = 0; j < n_particles * n_dims; j++) {
       if(fscanf(trajectory, "%lg", &temp) == 0) {
 	if(feof(trajectory)) {
 #ifdef DEBUG
-	  for(j = 0; j < max_frames; j++) {
+	  for(j = 0; j < *frame_number; j++) {
 	    printf("%d: %ld\n", j, mapping[j]);
 	  }
 #endif
@@ -76,15 +76,15 @@ long* load_nlist_file_mapping(FILE* nlist, unsigned int max_frames, unsigned int
 
   long* mapping = (long*) malloc(sizeof(long) * max_frames);
   *nlist_length = (unsigned int*) malloc(sizeof(unsigned int) * max_frames);
-  unsigned int i, j;
-  int temp, time_stamp;;
+  unsigned int i, j, time_stamp;
+  int temp;
 
   //Get the binary position of the neighbor lists and get the neighbor list lenghts
   for(i = 0; i < max_frames; i++) {
     mapping[i] = ftell(nlist);
     //read in the length of the neighbor list and when the next frame update is
-    if(fscanf(nlist, "%d ", &(*nlist_length)[i]) == 0 ||
-       fscanf(nlist, "%d\n", &time_stamp) == 0) {
+    if(fscanf(nlist, "%ud ", &(*nlist_length)[i]) == 0 ||
+       fscanf(nlist, "%ud\n", &time_stamp) == 0) {
       if(feof(nlist)) {
 #ifdef DEBUG
 	for(j = 0; j < i; j++)
@@ -99,9 +99,9 @@ long* load_nlist_file_mapping(FILE* nlist, unsigned int max_frames, unsigned int
     }
 
     //skip over the mapping until the next update
-    for(j = i + 1; j < next_update; j++) {
+    for(j = i + 1; j < time_stamp; j++) {
       mapping[j] = ftell(nlist);
-      *(nlist_length)[j] = *(nlist_lenght)[i];
+      *(nlist_length)[j] = *(nlist_length)[i];
 #ifdef DEBUG
       printf("Filling frame %d nlist with data from frame %d\n", j, i);
 #endif

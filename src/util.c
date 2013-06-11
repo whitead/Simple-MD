@@ -262,7 +262,7 @@ Run_Params* read_parameters(char* file_name) {
     params->forces_file = fopen(item->valuestring, "w");
   else
     params->forces_file = NULL;
-    
+
 
   free(data);
   cJSON_Delete(root);

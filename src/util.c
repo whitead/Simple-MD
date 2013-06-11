@@ -179,8 +179,15 @@ Run_Params* read_parameters(char* file_name) {
     fprintf(stderr, "Warning: Assuming skin = %g\n", skin);
   }
 
+  item = cJSON_GetObjectItem(root, "nlist_log_file");
+  FILE* nlist_output = NULL;
+  if(item)
+    nlist_output = fopen(item->valuestring, "w");
+
+  
   Nlist_Parameters* nlist = build_nlist_params(params->n_dims, params->n_particles,
-					       params->box_size, skin, rcut);
+					       params->box_size, skin, rcut,
+					       nlist_output);
 #endif//NLIST
 
   //thermostats

@@ -30,6 +30,7 @@ Nlist_Parameters* build_nlist_params(unsigned int n_dims, unsigned int n_particl
   nlist->nlist = NULL;
   nlist->last_positions = (double*) malloc(sizeof(double) * n_particles * n_dims);
   build_cells(box_size, n_dims, n_particles, nlist);
+  nlist->do_not_rebuild = 0;
   return nlist;
 }
 
@@ -189,7 +190,8 @@ void build_cells(double* box_size, unsigned int n_dims, unsigned int n_particles
  */
 void build_list(double* positions, double* box_size, unsigned int n_dims, unsigned int n_particles, Nlist_Parameters* nlist) {
 
-  unsigned int total_n = 0;
+  if(nlist->do_not_rebuild)
+    return;
 
   if(nlist->nlist == NULL) {
     //first call, need to set-up some things
@@ -197,6 +199,8 @@ void build_list(double* positions, double* box_size, unsigned int n_dims, unsign
     nlist->nlist = (unsigned int*) malloc(sizeof(unsigned int) * n_particles * (n_particles / 2));
     nlist->nlist_length  = n_particles * (n_particles / 2);    
   } 
+
+  unsigned int total_n = 0;
 
   //rebuild the list
   unsigned int i, k;

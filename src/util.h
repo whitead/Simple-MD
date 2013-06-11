@@ -25,6 +25,7 @@ typedef struct {
   double temperature;
   void* thermostat_parameters;
   void* force_parameters;
+  void* search_parameters;
   double* initial_positions;
   double* initial_velocities;
   double* masses;
@@ -72,6 +73,12 @@ void log_array(FILE* file, double* array, unsigned n_cols, unsigned n_rows, bool
  *
  */
 double* load_matrix(char* filename, unsigned int nrow, unsigned int ncol, unsigned int skip);
+
+/*
+ * Load a matrix from an open file
+ *
+ */
+void load_matrix_part(FILE* mfile, double* matrix, unsigned int nrow, unsigned int ncol);
 
 /*
  * Read in the given parameters.

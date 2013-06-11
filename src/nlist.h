@@ -29,6 +29,7 @@ typedef struct {
   const double skin;
   const double rcut;
   const double skin_rcut;
+  short do_not_rebuild; //skip rebuilding, for example if nlist was loaded from a file
 } Nlist_Parameters;
 
 

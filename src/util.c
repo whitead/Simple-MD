@@ -211,6 +211,12 @@ Run_Params* read_parameters(char* file_name) {
   params->force_parameters = build_lj(epsilon, sigma, nlist);
 #endif//LJ
 
+#ifdef FM
+  double epsilon = retrieve_item(root, default_root, "lj_epsilon_guess")->valuedouble;
+  double sigma = retrieve_item(root, default_root, "lj_sigma_guess")->valuedouble;
+  params->search_parameters = build_lj(epsilon, sigma, nlist);
+#endif
+
   //load input files
   char* positions_file = retrieve_item(root, default_root, "start_positions")->valuestring; 
   params->initial_positions = load_matrix(positions_file, params->n_particles, params->n_dims, 0);
@@ -368,6 +374,7 @@ double* load_matrix(char* filename, unsigned int nrow, unsigned int ncol, unsign
   return NULL;
 
 }
+
 
 
 double remove_com(double* velocities, double* masses, unsigned int n_dims, unsigned int n_particles) {

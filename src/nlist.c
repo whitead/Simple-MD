@@ -22,7 +22,12 @@ void build_list(double* positions, double* box_size, unsigned int n_dims, unsign
 void build_cells(double* box_size, unsigned int n_dims, unsigned int n_particles, Nlist_Parameters* nlist);
 
 
-Nlist_Parameters* build_nlist_params(unsigned int n_dims, unsigned int n_particles, double* box_size, double skin, double rcut) {
+Nlist_Parameters* build_nlist_params(unsigned int n_dims, 
+				     unsigned int n_particles, 
+				     double* box_size, 
+				     double skin, 
+				     double rcut,
+				     FILE* output_file) {
   
   Nlist_Parameters init = {.rcut = rcut * rcut, .skin = skin * skin , .skin_rcut = (rcut + skin) * (rcut + skin)};
   Nlist_Parameters* nlist = (Nlist_Parameters*) malloc(sizeof(Nlist_Parameters));
@@ -31,6 +36,9 @@ Nlist_Parameters* build_nlist_params(unsigned int n_dims, unsigned int n_particl
   nlist->last_positions = (double*) malloc(sizeof(double) * n_particles * n_dims);
   build_cells(box_size, n_dims, n_particles, nlist);
   nlist->do_not_rebuild = 0;
+  nlist->step = 0;
+  nlist->output_file = output_file;
+
   return nlist;
 }
 
@@ -44,17 +52,23 @@ void free_nlist(Nlist_Parameters* nlist) {
   free(nlist->mapping);
   free(nlist->head);
   free(nlist->cell_list);
+  fclose(nlist->output_file);
+  free(nlist->output_file);
 
   free(nlist);
 }
 
-
 void update_nlist(double* positions, 
-	     double* box_size, 
-	     unsigned int n_dims, 
-	     unsigned int n_particles, 
-	     Nlist_Parameters* nlist) {
+		  double* box_size, 
+		  unsigned int n_dims, 
+		  unsigned int n_particles, 
+		  Nlist_Parameters* nlist) {
 
+
+  nlist->step++; 
+
+  if(nlist->do_not_rebuild)
+    return;
 
   if(nlist->nlist == NULL) {
     build_list(positions, box_size, n_dims, n_particles, nlist);
@@ -83,12 +97,40 @@ void update_nlist(double* positions,
     printf("updating nlist due to %f + %f > %f\n", max1, max2, nlist->skin);
 #endif
     build_list(positions, box_size, n_dims, n_particles, nlist);
+    log_nlist(nlist, nlist->step, n_particles);
   }
 
 
   return;
 }
 
+void log_nlist(Nlist_Parameters* nlist, 
+	       unsigned int time_stamp, 
+	       unsigned int n_particles) {
+  
+
+  if(nlist->output_file) {
+    unsigned int nlist_total, i, j, k;
+    for(nlist_totlal = i = 0; i < n_particles; i++)
+      nlist_total += nlist->nlist_count[i];
+    fprintf(nlist->output_file, "%ud %ud\n", nlist_total, time_stamp);
+    for(i = 0; i < n_particles; i++) {
+      fprintf(nlist->output_file, "%d ",nlist->nlist_count[i]);
+    }
+
+    fprtinf(nlist->output_file, "\n");
+
+    for(k = i = 0; i < n_particles; i++)
+      for(j = 0; j < nlist->nlist_count[i]; j++)
+	fprintf(nlist->output_file, "%d ",nlist->nlist[k++]);
+
+
+    fprtinf(nlist->output_file, "\n");
+
+  }
+
+
+}
 
 unsigned int gen_index_r(int* array, int* dims, unsigned int index, unsigned int cur_dim, unsigned int n_dims, int value, unsigned int output_length) {
   int diff[3] = {0, -1, 1};
@@ -189,9 +231,6 @@ void build_cells(double* box_size, unsigned int n_dims, unsigned int n_particles
  * Build neighbor list using cells in N-dimensions
  */
 void build_list(double* positions, double* box_size, unsigned int n_dims, unsigned int n_particles, Nlist_Parameters* nlist) {
-
-  if(nlist->do_not_rebuild)
-    return;
 
   if(nlist->nlist == NULL) {
     //first call, need to set-up some things

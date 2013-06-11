@@ -77,14 +77,14 @@ long* load_nlist_file_mapping(FILE* nlist, unsigned int max_frames, unsigned int
   long* mapping = (long*) malloc(sizeof(long) * max_frames);
   *nlist_length = (unsigned int*) malloc(sizeof(unsigned int) * max_frames);
   unsigned int i, j;
-  int temp, next_update;
+  int temp, time_stamp;;
 
   //Get the binary position of the neighbor lists and get the neighbor list lenghts
   for(i = 0; i < max_frames; i++) {
     mapping[i] = ftell(nlist);
     //read in the length of the neighbor list and when the next frame update is
     if(fscanf(nlist, "%d ", &(*nlist_length)[i]) == 0 ||
-       fscanf(nlist, "%d\n", &next_update) == 0) {
+       fscanf(nlist, "%d\n", &time_stamp) == 0) {
       if(feof(nlist)) {
 #ifdef DEBUG
 	for(j = 0; j < i; j++)
@@ -96,14 +96,6 @@ long* load_nlist_file_mapping(FILE* nlist, unsigned int max_frames, unsigned int
       }
     } else {
       perror("Could not read nlist file");
-    }        
-    for(j = 0; j < n_particles + (*nlist_length)[i]; j++) {
-      if(fscanf(nlist, "%d", &temp) == 0) {
-	if(feof(nlist)) {
-	  fprintf(stderr, "Error: incomplete neighbor list in file\n");
-	  exit(1);
-	}
-      }
     }
 
     //skip over the mapping until the next update
@@ -113,6 +105,16 @@ long* load_nlist_file_mapping(FILE* nlist, unsigned int max_frames, unsigned int
 #ifdef DEBUG
       printf("Filling frame %d nlist with data from frame %d\n", j, i);
 #endif
+    }
+
+        
+    for(j = 0; j < n_particles + (*nlist_length)[i]; j++) {
+      if(fscanf(nlist, "%d", &temp) == 0) {
+	if(feof(nlist)) {
+	  fprintf(stderr, "Error: incomplete neighbor list in file\n");
+	  exit(1);
+	}
+      }
     }
   }
 

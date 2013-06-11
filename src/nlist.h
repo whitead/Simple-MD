@@ -1,4 +1,5 @@
 #include "min_image.h"
+#include <stdio.h>
 
 #define NLIST
 
@@ -15,8 +16,10 @@
  */
 typedef struct {
   double* last_positions; //used for finding maximum displacement
+
   unsigned int* nlist; //neighbor list
   unsigned int* nlist_count; // number of neighbors
+
   int* cell_number; //cells used for constructing neighbor list    
   int* adjacent_cells;//offsets to get adjacent cells
   unsigned int* mapping;//Maps PBC for cells
@@ -26,10 +29,15 @@ typedef struct {
   unsigned int cell_number_total;//number of cells
   unsigned int ncell_number;//number of adjacent cells
   unsigned int map_offset;//offset for mapping
+
   const double skin;
   const double rcut;
   const double skin_rcut;
+
   short do_not_rebuild; //skip rebuilding, for example if nlist was loaded from a file
+  unsigned int step; //internal step counter, used only for logging
+  FILE* output_file; //output file
+  
 } Nlist_Parameters;
 
 

@@ -113,7 +113,7 @@ void log_nlist(Nlist_Parameters* nlist,
     unsigned int nlist_total, i, j, k;
     for(nlist_total = i = 0; i < n_particles; i++)
       nlist_total += nlist->nlist_count[i];
-    fprintf(nlist->output_file, "%ud %ud\n", nlist_total, time_stamp);
+    fprintf(nlist->output_file, "%u %u\n", nlist_total, time_stamp);
     for(i = 0; i < n_particles; i++) {
       fprintf(nlist->output_file, "%d ",nlist->nlist_count[i]);
     }

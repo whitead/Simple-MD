@@ -7,10 +7,18 @@ int main(int argc, char* argv[]) {
   //process arguemnts to get parameters
   pfile = NULL;
 
-  if(argc == 1)
+  if(argc == 2)
     pfile = argv[1];
 
+#ifdef DEBUG
+  printf("Reading parameters... from %s\n", (pfile ? pfile : "stdin"));
+#endif
+
   Run_Params* p = read_parameters(pfile);
+
+#ifdef DEBUG
+  printf("Beginning main loop...\n");
+#endif
 
   //start main loop
   main_loop(p);

@@ -49,12 +49,12 @@ void load_json(char* filename, char** data) {
     int buffer_size = PARAM_FILE_BUFFER;
     char* buffer = (char*) malloc(buffer_size);
     //read in up to buffer size
-    int len = fread(buffer,  sizeof(char),  PARAM_FILE_BUFFER, f);
+    int len = fread(buffer,  1,  PARAM_FILE_BUFFER, f);
     //while we fill the buffer, keep reading
-    while(len % buffer_size == 0) {
+    while(len % buffer_size == 0) {      
       buffer_size += PARAM_FILE_BUFFER;
       buffer = (char*) realloc(buffer, buffer_size);
-      len += fread((void*) (buffer + len), sizeof(char), PARAM_FILE_BUFFER, f);
+      len += fread((void*) (buffer + len), 1, PARAM_FILE_BUFFER, f);
     }
 
     if(ferror(f)) {
@@ -62,8 +62,11 @@ void load_json(char* filename, char** data) {
     }
     
     //trim to size
-    buffer = (char*) realloc(buffer, len);
+    buffer = (char*) realloc(buffer, len+1);
+    //add terminating char
+    buffer[len] = '\0';
     *data = buffer;
+    
     
   } else {//file
     //get file length
@@ -122,6 +125,7 @@ Run_Params* read_parameters(char* file_name) {
   
   if (!root) {
     fprintf(stderr, "Error before: [%s]\n",cJSON_GetErrorPtr());
+    fprintf(stderr, "Input was \n\n%s\n", data);
     exit(1);
   }
 

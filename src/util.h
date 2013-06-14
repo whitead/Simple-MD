@@ -34,6 +34,7 @@ typedef struct {
   unsigned int n_particles;
   FILE* positions_file;
   FILE* velocities_file;
+  bool position_xyz;
   FILE* forces_file;
   unsigned int position_log_period;
   unsigned int velocity_log_period;

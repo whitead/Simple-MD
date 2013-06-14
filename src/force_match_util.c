@@ -8,7 +8,7 @@ void load_matrix_part(FILE* mfile, double* matrix, unsigned int nrow, unsigned i
 
     for(i = 0; i < nrow; i++) {
       for(j = 0; j < ncol; j++) {
-	if(fscanf(mfile, "%lg", &(matrix[i*ncol + j])) == 0) {
+	if(fscanf(mfile, "%lg", &(matrix[i*ncol + j])) == EOF) {
 	  fprintf(stderr, "Incorrect number of rows or columns"
 		  "at i = %d, and j=%d, nrow=%d, ncol=%d\n", i, j, nrow, ncol);
 	  exit(1);
@@ -30,7 +30,7 @@ void load_int_matrix_part(FILE* mfile, unsigned int* matrix, unsigned int nrow, 
 
     for(i = 0; i < nrow; i++) {
       for(j = 0; j < ncol; j++) {
-	if(fscanf(mfile, "%ud", &(matrix[i*ncol + j])) == 0) {
+	if(fscanf(mfile, "%d", &(matrix[i*ncol + j])) == EOF) {
 	  fprintf(stderr, "Incorrect number of rows or columns"
 		  "at i = %d, and j=%d, nrow=%d, ncol=%d\n", i, j, nrow, ncol);
 	  exit(1);
@@ -54,14 +54,14 @@ long* load_traj_file_mapping(FILE* trajectory, unsigned int* frame_number, unsig
   for(i = 0; i < *frame_number; i++) {
     mapping[i] = ftell(trajectory);
     for(j = 0; j < n_particles * n_dims; j++) {
-      if(fscanf(trajectory, "%lg", &temp) == 0) {
+      if(fscanf(trajectory, "%lg", &temp) == EOF) {
 	if(feof(trajectory)) {
 #ifdef DEBUG
 	  for(j = 0; j < *frame_number; j++) {
 	    printf("%d: %ld\n", j, mapping[j]);
 	  }
 #endif
-	  realloc(mapping, sizeof(long) * i);
+	  mapping = (long *) realloc(mapping, sizeof(long) * i);
 	  return mapping;
 	}
       }
@@ -72,44 +72,52 @@ long* load_traj_file_mapping(FILE* trajectory, unsigned int* frame_number, unsig
 }
 
 
-long* load_nlist_file_mapping(FILE* nlist, unsigned int max_frames, unsigned int n_particles, unsigned int** nlist_length) {
+long* load_nlist_file_mapping(FILE* nlist, unsigned int frame_number, unsigned int n_particles, unsigned int** nlist_length) {
 
-  long* mapping = (long*) malloc(sizeof(long) * max_frames);
-  *nlist_length = (unsigned int*) malloc(sizeof(unsigned int) * max_frames);
-  unsigned int i, j, time_stamp;
-  int temp;
+  long* mapping = (long*) malloc(sizeof(long) * frame_number);
+  *nlist_length = (unsigned int*) malloc(sizeof(unsigned int) * frame_number);
+  unsigned int i, j, time_stamp, temp;
 
   //Get the binary position of the neighbor lists and get the neighbor list lenghts
-  for(i = 0; i < max_frames; i++) {
-    mapping[i] = ftell(nlist);
-    //read in the length of the neighbor list and when the next frame update is
-    if(fscanf(nlist, "%ud ", &(*nlist_length)[i]) == 0 ||
-       fscanf(nlist, "%ud\n", &time_stamp) == 0) {
-      if(feof(nlist)) {
-#ifdef DEBUG
-	for(j = 0; j < i; j++)
-	  printf("%d\n", (*nlist_length)[i]);
-#endif
-	realloc(mapping, sizeof(long) * i);
-	realloc(*nlist_length, sizeof(int) * i);
-	return mapping;
+  for(i = 0; i < frame_number; i++) {
+
+    //read in the length of the neighbor list and when this neighbor list was created
+    if(fscanf(nlist, "%u ", &temp) == EOF) {
+      if(feof(nlist)) { //all done reading file
+	break;
+      } else {
+	perror("Could not read nlist file");
+	exit(1);
       }
-    } else {
-      perror("Could not read nlist file");
     }
 
-    //skip over the mapping until the next update
-    for(j = i + 1; j < time_stamp; j++) {
-      mapping[j] = ftell(nlist);
-      *(nlist_length)[j] = *(nlist_length)[i];
+    if(fscanf(nlist, "%u\n", &time_stamp) == EOF) {
+      perror("Could not read nlist file");
+      exit(1);
+    }
+    
+    //store the list, now that we know when it was created
+    mapping[time_stamp] = ftell(nlist);
+    (*nlist_length)[time_stamp] = temp;
+      
+
+    //backfill mapping up until the time stamp
 #ifdef DEBUG
-      printf("Filling frame %d nlist with data from frame %d\n", j, i);
+    printf("time_stamp = %u, length = %u\n\n", time_stamp, temp);
+#endif
+
+    for(j = i; j < time_stamp; j++) {
+      mapping[j] = mapping[i - 1];
+      (*nlist_length)[j] = (*nlist_length)[i - 1];
+#ifdef DEBUG
+      printf("Filling frame %d nlist with data from frame %d\n", j, i - 1);
 #endif
     }
-
+    
+    i = time_stamp;
         
     for(j = 0; j < n_particles + (*nlist_length)[i]; j++) {
-      if(fscanf(nlist, "%d", &temp) == 0) {
+      if(fscanf(nlist, "%d", &temp) == EOF) {
 	if(feof(nlist)) {
 	  fprintf(stderr, "Error: incomplete neighbor list in file\n");
 	  exit(1);
@@ -117,6 +125,21 @@ long* load_nlist_file_mapping(FILE* nlist, unsigned int max_frames, unsigned int
       }
     }
   }
+
+  //if we didn't reach the last frame, fill with last known neighbor list
+  for(j = i; j < frame_number; j++) {
+    mapping[j] = mapping[i - 1];
+    (*nlist_length)[j] = (*nlist_length)[i - 1];
+#ifdef DEBUG
+    printf("Filling frame %d nlist with data from frame %d\n", j, i - 1);
+#endif
+  }
+
+
+#ifdef DEBUG
+  for(j = 0; j < frame_number; j++)
+    printf("mapping[%u] = %ld\n", j, mapping[j]);
+#endif
 
   return mapping;
 }

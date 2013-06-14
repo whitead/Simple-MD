@@ -42,7 +42,7 @@ cJSON: cJSON.c cJSON.h
 	$(CC) $(SUB_CFLAGS) cJSON.c
 
 nlist: nlist.c nlist.h
-	$(CC) $(SUB_CFLAGS) nlist.c
+	$(CC) $(SUB_CFLAGS) -DDEBUG nlist.c
 
 min_image: min_image.c min_image.h
 	$(CC) $(SUB_CFLAGS) min_image.c
@@ -63,7 +63,7 @@ lj_force: lj_force.c force.h
 	$(CC) $(SUB_CFLAGS) -DLJ lj_force.c
 
 force_match_util: force_match_util.c force_match_util.h
-	$(CC) $(SUB_CFLAGS) force_match_util.c
+	$(CC) $(SUB_CFLAGS) -DDEBUG force_match_util.c
 
 anderson_thermostat: util.c util.h anderson_thermostat.c thermostat.h 
 	$(CC) $(SUB_CFLAGS) -DANDERSON anderson_thermostat.c
@@ -82,10 +82,10 @@ optimize: CFLAGS += -march=native -Ofast -fmodulo-sched-allow-regmoves
 optimize: MAKE_EXE_FLAGS += -fwhole-program
 optimize: $(filter-out optimize, $(MAKECMDGOALS))
 
-force_match: PPFLAGS += -DLJ
+force_match: PPFLAGS += -DLJ -DFM
 force_match: SUFFX = fm
 force_match: min_image lj_force nlist util cJSON force_match_util
-	$(CC) $(CFLAGS) $(PPFLAGS) $(MAKE_EXE_FLAGS) -o $@ $(UTIL_O) $(addsuffix _$(SUFFIX).o, $^) -lgsl -lblas -lm force_match.c
+	$(CC) $(CFLAGS) $(PPFLAGS) $(MAKE_EXE_FLAGS) -o $@ $(UTIL_O) $(addsuffix _$(SUFFIX).o, $^) -lgsl -lblas -lm -DDEBUG force_match.c
 	$(FINISH)
 
 soft_vverlet: SUFFIX = s

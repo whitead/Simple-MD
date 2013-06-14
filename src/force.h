@@ -27,6 +27,12 @@ typedef struct {
 double gather_forces(void* parameters, double* positions, double* forces, double* masses, 
 		     double* box_size, unsigned int n_dims, unsigned int n_particles);
 
+/*
+ * Calculates forces, rebuild neighbor list, and parameter derivatives force
+ */
+double gather_forces_and_deriv(void* parameters, double* positions, double* forces, double* force_derivatves, double* masses, double* box_size, unsigned int n_dims, unsigned int n_particles);
+
+
 void free_forces(void* parameters);
 
 #ifdef HARMONIC

@@ -72,9 +72,13 @@ int main_loop(Run_Params* params){
     
     
     //print
-    if(i % params->position_log_period == 0) {      
-      sprintf(xyz_file_comment, "Frame: %d", i);
+    if(i % params->position_log_period == 0) {
+      if(params->position_xyz) {
+	sprintf(xyz_file_comment, "Frame: %d", i);
 	log_xyz(params->positions_file, positions, xyz_file_comment, params->n_dims, params->n_particles);
+      } else {
+	log_array(params->positions_file, positions, params->n_dims, params->n_particles, true);
+      }
     }
 
     if(i % params->velocity_log_period == 0)

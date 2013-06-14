@@ -53,7 +53,7 @@ void free_nlist(Nlist_Parameters* nlist) {
   free(nlist->head);
   free(nlist->cell_list);
   fclose(nlist->output_file);
-  free(nlist->output_file);
+
 
   free(nlist);
 }
@@ -72,6 +72,7 @@ void update_nlist(double* positions,
 
   if(nlist->nlist == NULL) {
     build_list(positions, box_size, n_dims, n_particles, nlist);
+    log_nlist(nlist, nlist->step - 1, n_particles);
   }
   
   double dist, temp;
@@ -97,7 +98,7 @@ void update_nlist(double* positions,
     printf("updating nlist due to %f + %f > %f\n", max1, max2, nlist->skin);
 #endif
     build_list(positions, box_size, n_dims, n_particles, nlist);
-    log_nlist(nlist, nlist->step, n_particles);
+    log_nlist(nlist, nlist->step - 1, n_particles);
   }
 
 
@@ -109,7 +110,10 @@ void log_nlist(Nlist_Parameters* nlist,
 	       unsigned int n_particles) {
   
 
-  if(nlist->output_file) {
+  if(nlist->output_file && !nlist->do_not_rebuild) {
+#ifdef DEBUG
+    printf("Writing out nlist\n");
+#endif
     unsigned int nlist_total, i, j, k;
     for(nlist_total = i = 0; i < n_particles; i++)
       nlist_total += nlist->nlist_count[i];

@@ -4,7 +4,7 @@ int main(int argc, char* argv[]) {
 
   char* pfile = NULL;
 
-  if(argc == 1) {
+  if(argc == 2) {
     pfile = argv[1];
   }
 
@@ -26,12 +26,11 @@ void fm_loop(Run_Params* params) {
   }
 
   //get trajectory frame file offsets
-
-  double*  positions = (double*) malloc(sizeof(double) * params->n_particles * params->n_dims); 
+  double*  positions = params->initial_positions;
   unsigned int frame_number = (params->steps) / params->position_log_period;
   long* traj_file_mapping = load_traj_file_mapping(traj_file, &frame_number, params->n_particles, params->n_dims);
   
-  //get nlist file offsets
+  //get nlist file offsets and parameters
   Nlist_Parameters* np =( (Nlist_Parameters*) ( (Lj_Parameters*) params->force_parameters)->nlist);
   FILE* nlist_file = np->output_file;
   if(!nlist_file) {
@@ -53,8 +52,11 @@ void fm_loop(Run_Params* params) {
   //turn off neighbor list rebuilding
   np->do_not_rebuild = 1;
 
-  double* ref_forces = (double*) malloc(sizeof(double) * params->n_particles);
-  double* target_forces = (double*) malloc(sizeof(double) * params->n_particles);
+  double* ref_forces = (double*) malloc(sizeof(double) * params->n_particles * params->n_dims);
+  double* target_forces = (double*) malloc(sizeof(double) * params->n_particles * params->n_dims);
+  double* force_deriv = (double*) malloc(sizeof(double) * params->n_particles * params->n_dims);
+  double* grad = (double*) malloc(sizeof(double) * 2);  
+  
 
   for(i = 0; i < frame_number; i++) {
 
@@ -71,12 +73,43 @@ void fm_loop(Run_Params* params) {
     gather_forces(params->force_parameters, positions, ref_forces, params->masses, params->box_size, params->n_dims, params->n_particles);
     
     //gather forces according to parameters guess
-    gather_forces(params->search_parameters, positions, target_forces, params->masses, params->box_size, params->n_dims, params->n_particles);
+    gather_forces_and_deriv(params->search_parameters, positions, target_forces, force_deriv, params->masses, params->box_size, params->n_dims, params->n_particles);
+
+    //calculate delta F^2
+    printf("loss = %g\n", loss_function(ref_forces, target_forces, params->n_particles * params->n_dims));
     
-    //calculate gradient    
+    //calculate gradient 
+    gradient(ref_forces, target_forces, force_deriv, grad,
+	     ((Lj_Parameters*)params->search_parameters)->epsilon, 
+	     params->n_particles * params->n_dims);
+
+    printf("dF / dS = %g, dF / dE = %g\n", grad[0], grad[1]);
+    
     
     //update 
     
   }
 
 }
+
+
+double loss_function(double* forces_1, double* forces_2, unsigned int n) {
+  unsigned int i;
+  double result = 0;
+  for(i = 0; i < n; i++)
+    result += pow(forces_1[i] - forces_2[i], 2);
+  
+  return result;
+  
+
+}
+
+void gradient(double* ref_forces, double* target_forces, double* delta_sigma, double* grad, double epsilon, unsigned int n) {
+  unsigned int i;
+  grad[0] = grad[1] = 0;
+  for(i = 0; i < n; i++) {
+    grad[0] -= 2 * (ref_forces[i] - target_forces[i]) * delta_sigma[i];
+    grad[1] -= 2 * (ref_forces[i] - target_forces[i]) * target_forces[i] / epsilon;
+  }
+}
+

@@ -7,6 +7,12 @@ inline double lj(double r,  double epsilon, double sigma) {
   return 4 * epsilon * (6 * pow(sigma / r, 7) - 12 * pow(sigma / r, 13));  
 }
 
+//force derivative wrt sigma
+inline double dslj(double r,  double epsilon, double sigma) {
+  return 4 * epsilon * (42 * pow(sigma / r, 6) - 156 * pow(sigma / r, 12));  
+}
+
+
 inline double lj_trunc_shift(double r, double epsilon, double sigma, double rc, double shift) {
   if(r >= rc) {
     return 0;
@@ -14,8 +20,29 @@ inline double lj_trunc_shift(double r, double epsilon, double sigma, double rc, 
   return lj(r, epsilon, sigma) - shift;
 }
 
-double gather_forces(void* parameters, double* positions, double* forces, double* masses, 
-		     double* box_size, unsigned int n_dims, unsigned int n_particles) {
+//force derivative wrt sigma
+inline double dslj_trunc_shift(double r, double epsilon, double sigma, double rc, double shift) {
+  if(r >= rc) {
+    return 0;
+  }
+  return dslj(r, epsilon, sigma) - shift;
+}
+
+
+double gather_forces(void* parameters, double* positions, double* forces, double* masses, double* box_size, unsigned int n_dims, unsigned int n_particles) {
+  return gather_forces_and_deriv(parameters, positions, forces, NULL, masses, box_size, n_dims, n_particles);
+}
+
+
+double gather_forces_and_deriv(void* parameters, 
+			       double* positions, 
+			       double* forces, 
+			       double* force_derivatives, 
+			       double* masses,   
+			       double* box_size, 
+			       unsigned int n_dims, 
+			       unsigned int n_particles) {
+
   const double epsilon = ((Lj_Parameters*) parameters)->epsilon;
   const double sigma = ((Lj_Parameters*) parameters)->sigma;
   Nlist_Parameters* nlist = ((Lj_Parameters*) parameters)->nlist;
@@ -26,10 +53,11 @@ double gather_forces(void* parameters, double* positions, double* forces, double
   unsigned int i, j, k, n;
   int offset;
   double penergy = 0;
-  double r, force, diff;
+  double r, force, diff, dsforce;
   double force_vector[n_dims];
   double rcut = sqrt(nlist->rcut);
-  double lj_shift = lj(rcut, epsilon, sigma);
+  double lj_shift = lj(rcut, epsilon, sigma);  
+  double dslj_shift = dslj(rcut, epsilon, sigma);
   
 
   //zero forces
@@ -48,7 +76,7 @@ double gather_forces(void* parameters, double* positions, double* forces, double
   //hence the conditionals.
 
 #pragma omp parallel default(shared) \
-  private(offset, n, i, j, k, r, force, force_vector, diff)\
+  private(offset, n, i, j, k, r, force, dsforces, force_vector, diff)	\
   reduction(+:penergy)
   {
 
@@ -86,15 +114,24 @@ double gather_forces(void* parameters, double* positions, double* forces, double
 	r = sqrt(r);
 	//LJ force and potential
 	force = lj_trunc_shift(r, epsilon, sigma, rcut, lj_shift);
+
+	//calculate sigma derivative
+	dsforce = lj_trunc_shift(r, epsilon, sigma, rcut, dslj_shift);
+	
 	
 #ifdef DEBUG
 	printf("F(%d - %d, %g) = %g\n", i, j, r, force);
+	printf("dF/dSigma(%d - %d, %g) = (%g, %g)\n", i, j, r, dsforces);
 #endif //DEBUG
 	
 #pragma omp critical (update_forces)
 	for(k = 0; k < n_dims; k++)  {
 	  forces[i * n_dims + k] += force / r * force_vector[k];
 	  forces[j * n_dims + k] -= force / r * force_vector[k];
+	  if(force_derivatives) {
+	    force_derivatives[i * n_dims + k] += dsforce / r * force_vector[k];
+	    force_derivatives[j * n_dims + k] -= dsforce / r * force_vector[k];
+	  }
 	}
 	
 	penergy += 4 * epsilon * (pow(sigma / r, 12) - pow(sigma / r, 6)) - 4 * epsilon * (pow(sigma / rcut, 12) - pow(sigma / rcut, 6));

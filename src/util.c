@@ -3,7 +3,7 @@
 #define PARAM_FILE_BUFFER 1024
 
 static const char*  
-default_json       = " { \"com_remove_period\" : 1000, \"skin\" : 0, \"thermostat_seed\" : 1523, \"anderson_nu\" : 10.0, \"harmonic_constant\" : 1.0, \"lj_epsilon\" : 1.0, \"lj_sigma\" : 1.0,  \"velocity_seed\" : 543214, \"position_log_period\" : 0, \"velocity_log_period\" : 0, \"force_log_period\" : 0} ";
+default_json       = " { \"com_remove_period\" : 1000, \"skin\" : 0, \"thermostat_seed\" : 1523, \"anderson_nu\" : 10.0, \"harmonic_constant\" : 1.0, \"lj_epsilon\" : 1.0, \"lj_sigma\" : 1.0,  \"velocity_seed\" : 543214, \"position_xyz\" : true, \"position_log_period\" : 0, \"velocity_log_period\" : 0, \"force_log_period\" : 0, \"lj_sigma_guess\" : 0.5, \"lj_epsilon_guess\" : 1.5} ";
 
 
 double* generate_velocities(double temperature, unsigned int seed, double* masses, unsigned int n_dims, unsigned int n_particles) {
@@ -186,7 +186,7 @@ Run_Params* read_parameters(char* file_name) {
   item = cJSON_GetObjectItem(root, "nlist_log_file");
   FILE* nlist_output = NULL;
   if(item)
-    nlist_output = fopen(item->valuestring, "w");
+    nlist_output = fopen(item->valuestring, "r+");
 
   
   Nlist_Parameters* nlist = build_nlist_params(params->n_dims, params->n_particles,
@@ -223,14 +223,16 @@ Run_Params* read_parameters(char* file_name) {
 #endif//LJ
 
 #ifdef FM
-  double epsilon = retrieve_item(root, default_root, "lj_epsilon_guess")->valuedouble;
-  double sigma = retrieve_item(root, default_root, "lj_sigma_guess")->valuedouble;
+  epsilon = retrieve_item(root, default_root, "lj_epsilon_guess")->valuedouble;
+  sigma = retrieve_item(root, default_root, "lj_sigma_guess")->valuedouble;
   params->search_parameters = build_lj(epsilon, sigma, nlist);
 #endif
 
   //load input files
   char* positions_file = retrieve_item(root, default_root, "start_positions")->valuestring; 
   params->initial_positions = load_matrix(positions_file, params->n_particles, params->n_dims, 0);
+  //use xyz format
+  params->position_xyz = retrieve_item(root, default_root, "position_xyz")->valueint;
   
   char* masses_file = retrieve_item(root, default_root, "masses_file")->valuestring;
   params->masses = load_matrix(masses_file, params->n_particles, 1, 0);
@@ -250,20 +252,20 @@ Run_Params* read_parameters(char* file_name) {
   //prepare output files
   item = cJSON_GetObjectItem(root, "positions_log_file");
   if(item)
-    params->positions_file = fopen(item->valuestring, "w");
+    params->positions_file = fopen(item->valuestring, "r+");
   else
     params->positions_file = NULL;
 
 
   item = cJSON_GetObjectItem(root, "velocities_log_file");
   if(item)
-    params->velocities_file = fopen(item->valuestring, "w");
+    params->velocities_file = fopen(item->valuestring, "r+");
   else
     params->velocities_file = NULL;
 
   item = cJSON_GetObjectItem(root, "forces_log_file");
   if(item)
-    params->forces_file = fopen(item->valuestring, "w");
+    params->forces_file = fopen(item->valuestring, "r+");
   else
     params->forces_file = NULL;
 

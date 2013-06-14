@@ -55,7 +55,12 @@ void fm_loop(Run_Params* params) {
   double* ref_forces = (double*) malloc(sizeof(double) * params->n_particles * params->n_dims);
   double* target_forces = (double*) malloc(sizeof(double) * params->n_particles * params->n_dims);
   double* force_deriv = (double*) malloc(sizeof(double) * params->n_particles * params->n_dims);
-  double* grad = (double*) malloc(sizeof(double) * 2);  
+  double* grad = (double*) malloc(sizeof(double) * 2); 
+
+  //optimization parameters
+  double ball_radius = 5000;
+  double lipschitz = 0;
+  Lj_Parameters* lj_search = params->search_parameters;
   
 
   for(i = 0; i < frame_number; i++) {
@@ -80,14 +85,20 @@ void fm_loop(Run_Params* params) {
     
     //calculate gradient 
     gradient(ref_forces, target_forces, force_deriv, grad,
-	     ((Lj_Parameters*)params->search_parameters)->epsilon, 
+	     lj_search->epsilon, 
 	     params->n_particles * params->n_dims);
 
     printf("dF / dS = %g, dF / dE = %g\n", grad[0], grad[1]);
     
     
-    //update 
-    
+    //update
+    if(grad[0] * grad[0] + grad[1] * grad[1] > lipschitz * lipschitz)
+      lipschitz = sqrt(grad[0] * grad[0] + grad[1] * grad[1]);
+      
+    printf("sigma = %g, epsilon = %g\n", lj_search->sigma, lj_search->epsilon);
+    lj_search->sigma = lj_search->sigma - (ball_radius)  / (lipschitz * sqrt(2.) * frame_number) * grad[0];
+    lj_search->epsilon = lj_search->epsilon - (ball_radius)  / (lipschitz * sqrt(2.) * frame_number) * grad[1];
+    printf("sigma' = %g, epsilon' = %g, eta = %g\n", lj_search->sigma, lj_search->epsilon, (ball_radius)  / (lipschitz * sqrt(2.) * frame_number));
   }
 
 }

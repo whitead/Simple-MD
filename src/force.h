@@ -15,8 +15,8 @@ typedef struct {
 #include "nlist.h"
 
 typedef struct {
-  const double epsilon;
-  const double sigma;
+  double epsilon;
+  double sigma;
   Nlist_Parameters* nlist;
 } Lj_Parameters;
 #endif 

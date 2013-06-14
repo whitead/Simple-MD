@@ -95,10 +95,18 @@ long* load_nlist_file_mapping(FILE* nlist, unsigned int frame_number, unsigned i
       perror("Could not read nlist file");
       exit(1);
     }
-    
+
+    //check to see if we're ending early
+    if(time_stamp >= frame_number) {
+      //reduce index, so that when we backfill after the loop it uses the previous neighbor list
+      i--;
+      break;
+    }
+
     //store the list, now that we know when it was created
     mapping[time_stamp] = ftell(nlist);
     (*nlist_length)[time_stamp] = temp;
+
       
 
     //backfill mapping up until the time stamp
@@ -106,7 +114,7 @@ long* load_nlist_file_mapping(FILE* nlist, unsigned int frame_number, unsigned i
     printf("time_stamp = %u, length = %u\n\n", time_stamp, temp);
 #endif
 
-    for(j = i; j < time_stamp; j++) {
+    for(j = i; j < time_stamp && j < frame_number; j++) {
       mapping[j] = mapping[i - 1];
       (*nlist_length)[j] = (*nlist_length)[i - 1];
 #ifdef DEBUG

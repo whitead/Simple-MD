@@ -3,7 +3,7 @@
 #define PARAM_FILE_BUFFER 1024
 
 static const char*  
-default_json       = " { \"com_remove_period\" : 1000, \"skin\" : 0, \"thermostat_seed\" : 1523, \"anderson_nu\" : 10.0, \"harmonic_constant\" : 1.0, \"lj_epsilon\" : 1.0, \"lj_sigma\" : 1.0,  \"velocity_seed\" : 543214, \"position_xyz\" : true, \"position_log_period\" : 0, \"velocity_log_period\" : 0, \"force_log_period\" : 0, \"lj_sigma_guess\" : 0.5, \"lj_epsilon_guess\" : 1.5} ";
+default_json       = " { \"com_remove_period\" : 1000, \"skin\" : 0, \"thermostat_seed\" : 1523, \"anderson_nu\" : 10.0, \"harmonic_constant\" : 1.0, \"lj_epsilon\" : 1.0, \"lj_sigma\" : 1.0,  \"velocity_seed\" : 543214, \"position_xyz\" : true, \"position_log_period\" : 0, \"velocity_log_period\" : 0, \"force_log_period\" : 0, \"lj_sigma_guess\" : 1.0, \"lj_epsilon_guess\" : 1.5} ";
 
 
 double* generate_velocities(double temperature, unsigned int seed, double* masses, unsigned int n_dims, unsigned int n_particles) {

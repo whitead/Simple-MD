@@ -18,7 +18,7 @@ int main(int argc, char* argv[]) {
 
 void fm_loop(Run_Params* params) {
 
-  unsigned int i;
+  int i;
 
   FILE* traj_file = params->positions_file;
   if(!traj_file) {
@@ -58,30 +58,60 @@ void fm_loop(Run_Params* params) {
   double* grad = (double*) malloc(sizeof(double) * 2); 
 
   //optimization parameters
-  double ball_radius = 5000;
-  double lipschitz = 0;
+  double ball_radius = 2;
+  double lipschitz[2] = {0, 0};
   Lj_Parameters* lj_search = params->search_parameters;
-  
+  unsigned int* frames = (unsigned int*) malloc(sizeof(unsigned int) * frame_number);
+  unsigned int current_frame, sampled_index, grad_index;
+  for(i = 0; i < frame_number; i++)
+    frames[i] = i;
 
-  for(i = 0; i < frame_number; i++) {
+  gsl_rng * rng;
+  gsl_rng_env_setup();
+  rng = gsl_rng_alloc (gsl_rng_default);
+  long seed = time(NULL); //pseudo random seed
+  gsl_rng_set(rng, seed); 
+
+  //conservative play parameters
+  double loss;
+
+  for(i = frame_number; i >= 0; i--) {
+
+    //get random index
+    if(i > 0) {
+      sampled_index = gsl_rng_uniform_int(rng, i);    
+      current_frame = frames[sampled_index];
+      frames[sampled_index] = frames[i - 1];
+    } else {
+      current_frame = frames[i];
+    }
+
+#ifdef DEBUG
+    printf("Sampled frame %d for force_matching\n", current_frame);
+#endif
 
     //load trjacetory frame
-    fseek(traj_file, traj_file_mapping[i], SEEK_SET); //go to the frame in the file
+    fseek(traj_file, traj_file_mapping[current_frame], SEEK_SET); //go to the frame in the file
     load_matrix_part(traj_file, positions, params->n_particles, params->n_dims); //load the frame
 
     //load the neighbor list
-    fseek(nlist_file, nlist_file_mapping[i], SEEK_SET);
+    fseek(nlist_file, nlist_file_mapping[current_frame], SEEK_SET);
     load_int_matrix_part(nlist_file, np->nlist_count, params->n_particles, 1); //load neighbor list counts
-    load_int_matrix_part(nlist_file, np->nlist, nlist_lengths[i], 1); //load neighbor list
+    load_int_matrix_part(nlist_file, np->nlist, nlist_lengths[current_frame], 1); //load neighbor list
     
     //gather forces according to parameters
     gather_forces(params->force_parameters, positions, ref_forces, params->masses, params->box_size, params->n_dims, params->n_particles);
     
     //gather forces according to parameters guess
-    gather_forces_and_deriv(params->search_parameters, positions, target_forces, force_deriv, params->masses, params->box_size, params->n_dims, params->n_particles);
+    gather_forces_and_deriv(lj_search, positions, target_forces, force_deriv, params->masses, params->box_size, params->n_dims, params->n_particles);
 
-    //calculate delta F^2
-    printf("loss = %g\n", loss_function(ref_forces, target_forces, params->n_particles * params->n_dims));
+    //only update when necessary
+    loss = loss_function(ref_forces, target_forces, params->n_particles * params->n_dims);
+    if(loss == 0) {
+      continue;
+    }
+    
+    printf("Loss = %g\n", loss);
     
     //calculate gradient 
     gradient(ref_forces, target_forces, force_deriv, grad,
@@ -89,18 +119,36 @@ void fm_loop(Run_Params* params) {
 	     params->n_particles * params->n_dims);
 
     printf("dF / dS = %g, dF / dE = %g\n", grad[0], grad[1]);
-    
-    
-    //update
-    if(grad[0] * grad[0] + grad[1] * grad[1] > lipschitz * lipschitz)
-      lipschitz = sqrt(grad[0] * grad[0] + grad[1] * grad[1]);
-      
-    printf("sigma = %g, epsilon = %g\n", lj_search->sigma, lj_search->epsilon);
-    lj_search->sigma = lj_search->sigma - (ball_radius)  / (lipschitz * sqrt(2.) * frame_number) * grad[0];
-    lj_search->epsilon = lj_search->epsilon - (ball_radius)  / (lipschitz * sqrt(2.) * frame_number) * grad[1];
-    printf("sigma' = %g, epsilon' = %g, eta = %g\n", lj_search->sigma, lj_search->epsilon, (ball_radius)  / (lipschitz * sqrt(2.) * frame_number));
+        
+    //choose which component to update
+    grad_index = gsl_rng_uniform_int(rng, 2);
+    //update gradient accumulator
+    if(i % 25 == 0) {
+      lipschitz[0] = 0;
+      lipschitz[1] = 0;     
+    }
+    lipschitz[grad_index] += grad[grad_index] * grad[grad_index];
+
+    printf("sigma = %g, epsilon = %g update %s\n", lj_search->sigma, lj_search->epsilon, grad_index ? "epsilon" : "sigma");
+    if(grad_index == 0)
+      lj_search->sigma = lj_search->sigma - (ball_radius * sqrt(2))  / sqrt(lipschitz[0]) * grad[0];
+    else
+      lj_search->epsilon = lj_search->epsilon - (ball_radius * sqrt(2))  / sqrt(lipschitz[1]) * grad[1];
+
+    //project back onto search space
+    if(lj_search->sigma < 0)
+      lj_search->sigma = 0.01;
+    if(lj_search->epsilon < 0)
+      lj_search->epsilon = 0.01;
+
+    printf("sigma' = %g, epsilon' = %g, eta = %g\n", lj_search->sigma, lj_search->epsilon, (ball_radius * sqrt(2))  / sqrt(lipschitz[grad_index]));
   }
 
+  free(grad);
+  free(ref_forces);
+  free(target_forces);
+  free(force_deriv);
+  free(frames);
 }
 
 

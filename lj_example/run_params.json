@@ -1,20 +1,22 @@
 {
-	"steps": 1000,
+	"steps": 50000,
 	"time_step": 0.005,
 	"temperature": 0.7,
 	"velocity_seed": 456415615,
 	"anderson_nu" : 100,
 	"bussi_taut" : 1,
 	"thermostat_seed" : 1565,
-	"rcut": 1.5,
+	"rcut": 2.5,
 	"n_dims": 3,
 	"box_size" : [5.2, 5.2, 5.2],
-	"n_particles" : 64,
+	"n_particles" : 100,
 	"masses_file" : "masses.txt",
 	"start_positions": "start_positions.xyz",
 	"print_period" : 100,
 	"positions_log_file": "positions.txt",
 	"position_xyz" : false,
-	"position_log_period": 1,
-	"nlist_log_file": "nlist.txt"
+	"position_log_period": 100,
+	"nlist_log_file": "nlist.txt",
+	"lj_sigma_guess": 3,
+	"lj_epsilon_guess": 3
 }

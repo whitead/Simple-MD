@@ -66,6 +66,14 @@ double gather_forces_and_deriv(void* parameters,
     for(k = 0; k < n_dims; k++)
       forces[i * n_dims + k] = 0;
 
+  //zero derivatives forces
+  if(force_derivatives) {
+#pragma omp parallel for
+    for(i = 0; i < n_particles; i++)
+      for(k = 0; k < n_dims; k++)
+	force_derivatives[i * n_dims + k] = 0;
+  }
+
   //iterate through all particles
 
   //This seems strange at first,
@@ -76,7 +84,7 @@ double gather_forces_and_deriv(void* parameters,
   //hence the conditionals.
 
 #pragma omp parallel default(shared) \
-  private(offset, n, i, j, k, r, force, dsforces, force_vector, diff)	\
+  private(offset, n, i, j, k, r, force, dsforce, force_vector, diff)	\
   reduction(+:penergy)
   {
 
@@ -121,7 +129,7 @@ double gather_forces_and_deriv(void* parameters,
 	
 #ifdef DEBUG
 	printf("F(%d - %d, %g) = %g\n", i, j, r, force);
-	printf("dF/dSigma(%d - %d, %g) = (%g, %g)\n", i, j, r, dsforces);
+	printf("dF/dSigma(%d - %d, %g) = %g\n", i, j, r, dsforces);
 #endif //DEBUG
 	
 #pragma omp critical (update_forces)

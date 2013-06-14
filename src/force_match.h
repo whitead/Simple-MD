@@ -1,5 +1,8 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <time.h>
+#include <float.h>
+#include <gsl/gsl_randist.h>
 #include "util.h"
 #include "force.h"
 #include "force_match_util.h"

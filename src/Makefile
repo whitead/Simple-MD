@@ -13,6 +13,7 @@ all-single:
 	make optimize harmonic_vverlet
 	make optimize lj_vverlet
 	make optimize harmonic_vverlet_anderson
+	make optimize harmonic_vverlet_white
 	make optimize lj_vverlet_bussi
 	make optimize lj_vverlet_anderson
 	make optimize harmonic_vverlet_bussi
@@ -22,6 +23,7 @@ all:
 	make openmp optimize harmonic_vverlet
 	make openmp optimize lj_vverlet
 	make openmp optimize harmonic_vverlet_anderson
+	make openmp optimize harmonic_vverlet_white
 	make openmp optimize lj_vverlet_bussi
 	make openmp optimize lj_vverlet_anderson
 	make openmp optimize harmonic_vverlet_bussi
@@ -32,6 +34,7 @@ all-debug:
 	make harmonic_vverlet
 	make lj_vverlet
 	make harmonic_vverlet_anderson
+	make harmonic_vverlet_white
 	make lj_vverlet_bussi
 	make lj_vverlet_anderson
 	make harmonic_vverlet_bussi
@@ -65,6 +68,10 @@ lj_force: lj_force.c force.h
 
 anderson_thermostat: util.c util.h anderson_thermostat.c thermostat.h 
 	$(CC) $(SUB_CFLAGS) -DANDERSON anderson_thermostat.c
+
+white_thermostat: util.c util.h white_thermostat.c thermostat.h 
+	$(CC) $(SUB_CFLAGS) -DWHITE white_thermostat.c
+
 
 bussi_thermostat: util.c util.h bussi_thermostat.c thermostat.h 
 	$(CC) $(SUB_CFLAGS) -DBUSSI bussi_thermostat.c
@@ -107,6 +114,14 @@ harmonic_vverlet_anderson: PARAMS=harmonic
 harmonic_vverlet_anderson: min_image_nopbc anderson_thermostat vverlet harmonic_force nlist util cJSON
 	$(MAKE_EXE)
 	$(FINISH)
+
+harmonic_vverlet_white: PPFLAGS += -DHARMONIC -DNO_PBC -DWHITE
+harmonic_vverlet_white: SUFFIX = hva
+harmonic_vverlet_white: PARAMS=harmonic
+harmonic_vverlet_white: min_image_nopbc white_thermostat vverlet harmonic_force nlist util cJSON
+	$(MAKE_EXE)
+	$(FINISH)
+
 
 lj_vverlet_bussi: PPFLAGS += -DLJ -DBUSSI
 lj_vverlet_bussi: SUFFIX = ljvb

@@ -44,7 +44,7 @@ double resamplekin(gsl_rng* rng, double kk, double sigma, unsigned int ndeg, dou
 }
 
 
-double thermostat(double temperature, double time_step, void* thermostat_parameters, double* positions, double* velocities, double* masses, unsigned int n_dims, unsigned int n_particles) {
+double thermostat(double temperature, double time_step, void* thermostat_parameters, double* positions, double* velocities, double* forces, double* masses, unsigned int n_dims, unsigned int n_particles) {
 
   Bussi_Params* params = (Bussi_Params*) thermostat_parameters;
 

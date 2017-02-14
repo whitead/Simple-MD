@@ -8,7 +8,7 @@
 /*
  * Returns its conserved quantity. 0 for thermostats which don't coserve anything
  */
-double thermostat(double temperature, double time_step, void* thermostat_parameters, double* positions, double* velocities, double* masses, unsigned int n_dims, unsigned int n_particles);
+double thermostat(double temperature, double time_step, void* thermostat_parameters, double* positions, double* velocities, double* forces, double* masses, unsigned int n_dims, unsigned int n_particles);
 
 void free_thermostat(void* thermostat_parameters);
 
@@ -35,5 +35,20 @@ typedef struct {
 void* build_bussi(unsigned int seed, double taut);
 
 #endif
+
+#ifdef WHITE
+#define THERMOSTAT
+
+typedef struct {
+  gsl_rng * rng;
+  double mass;
+  double s;
+  double sdot;
+} White_Params;
+
+void* build_white(unsigned int seed, double mass);
+
+#endif
+
 
 #endif //THERMOSTAT_H_

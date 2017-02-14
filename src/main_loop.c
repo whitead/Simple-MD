@@ -55,7 +55,7 @@ int main_loop(Run_Params* params){
 
     //thermostat
 #ifdef THERMOSTAT
-    therm_conserved += thermostat(params->temperature, params->time_step, params->thermostat_parameters, positions, velocities, params->masses, params->n_dims, params->n_particles);
+    therm_conserved += thermostat(params->temperature, params->time_step, params->thermostat_parameters, positions, velocities, forces, params->masses, params->n_dims, params->n_particles);
 #endif
 
     //calculate important quantities

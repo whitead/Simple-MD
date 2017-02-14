@@ -193,6 +193,7 @@ class SimpleMD:
 
         out_arrays = (self.temperature, self.pe, self.ke, self.te, self.htherm)
 
+        print('executing {}'.format(self.exe))
         proc = subprocess.Popen(self.exe, stdin=subprocess.PIPE, bufsize=4096,
                            stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
@@ -200,6 +201,7 @@ class SimpleMD:
         
         if(self.do_log_output):
             with open(self.runParams['log_file'], 'w') as f:
+                print(output)
                 f.write(output)
 
         self.outerr = outerr

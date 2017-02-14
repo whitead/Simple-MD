@@ -200,6 +200,14 @@ Run_Params* read_parameters(char* file_name) {
   params->thermostat_parameters = build_bussi(seed, taut);
 
 #endif//BUSSI
+
+#ifdef WHITE
+
+  unsigned int seed = (unsigned int) retrieve_item(root, default_root, "thermostat_seed")->valueint;
+  double mass = retrieve_item(root, default_root, "white_mass")->valuedouble;
+  params->thermostat_parameters = build_white(seed, mass);
+
+#endif//WHITE
   
 #ifdef HARMONIC
   double k = retrieve_item(root, default_root, "harmonic_constant")->valuedouble;

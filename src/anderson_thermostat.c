@@ -2,7 +2,7 @@
 #include <gsl/gsl_randist.h>
 #include <math.h>
 
-double thermostat(double temperature, double time_step, void* thermostat_parameters, double* positions, double* velocities, double* masses, unsigned int n_dims, unsigned int n_particles) {
+double thermostat(double temperature, double time_step, void* thermostat_parameters, double* positions, double* velocities, double* forces, double* masses, unsigned int n_dims, unsigned int n_particles) {
 
   Anderson_Params* params = (Anderson_Params*) thermostat_parameters;
 

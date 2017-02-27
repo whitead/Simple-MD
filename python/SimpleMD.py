@@ -202,7 +202,9 @@ class SimpleMD:
         if(self.do_log_output):
             with open(self.runParams['log_file'], 'w') as f:
                 print(output)
+                print(outerr)
                 f.write(output)
+                f.write(outerr)
 
         self.outerr = outerr
 

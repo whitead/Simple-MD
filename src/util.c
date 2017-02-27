@@ -3,7 +3,7 @@
 #define PARAM_FILE_BUFFER 1024
 
 static const char*  
-default_json       = " { \"com_remove_period\" : 1000, \"skin\" : 0, \"thermostat_seed\" : 1523, \"anderson_nu\" : 10.0, \"harmonic_constant\" : 1.0, \"lj_epsilon\" : 1.0, \"lj_sigma\" : 1.0,  \"velocity_seed\" : 543214, \"position_log_period\" : 0, \"velocity_log_period\" : 0, \"force_log_period\" : 0} ";
+default_json       = " { \"com_remove_period\" : 1000, \"skin\" : 0, \"thermostat_seed\" : 1523, \"anderson_nu\" : 10.0, \"harmonic_constant\" : 1.0, \"lj_epsilon\" : 1.0, \"lj_sigma\" : 1.0,  \"velocity_seed\" : 543214, \"position_log_period\" : 0, \"velocity_log_period\" : 0, \"force_log_period\" : 0, \"white_mass\" : 1} ";
 
 
 double* generate_velocities(double temperature, unsigned int seed, double* masses, unsigned int n_dims, unsigned int n_particles) {
@@ -16,6 +16,7 @@ double* generate_velocities(double temperature, unsigned int seed, double* masse
   gsl_rng_env_setup();
   rng = gsl_rng_alloc (gsl_rng_default);
   gsl_rng_set(rng, seed);
+  double set_temperature = 0;
   
   for(i = 0; i < n_particles; i++) {
     for(j = 0; j < n_dims; j++) {
@@ -27,10 +28,8 @@ double* generate_velocities(double temperature, unsigned int seed, double* masse
   }
 
 
-#ifdef DEBUG
   double ke = calculate_kenergy(velocities, masses, n_dims, n_particles);
   printf("Generated velocity distribution with %g temperature\n", ke * 2 / (n_dims * n_particles));
-#endif
 
   gsl_rng_free(rng);
 
@@ -87,27 +86,29 @@ cJSON* retrieve_item(cJSON* root, cJSON* default_root, const char* item_name) {
   if(!item) { //check if it's in the default parameter list
     item = cJSON_GetObjectItem(default_root, item_name);
     if(item) {
-      fprintf(stderr, "Warning: assuming default value for %s = ", item_name);
-      switch(item->type) {
-      case cJSON_False:
-	fprintf(stderr, "false\n");
-	break;
-      case cJSON_True:
-	fprintf(stderr, "true\n");
-	break;
-      case cJSON_Number:
-	fprintf(stderr, "%g\n", item->valuedouble);
-	break;
-      case cJSON_String:
-	fprintf(stderr, "%s\n", item->valuestring);
-	break;
-      }
-	
+      printf("[util.c: retreive_item] (default) %s = ", item_name);
     }
     else {
       fprintf(stderr, "Error: could not read %s and no default value\n", item_name);
       exit(1);
     }
+  } else
+      printf("[util.c: retrieve_item] %s = ", item_name);
+
+  //print out value
+  switch(item->type) {
+  case cJSON_False:
+    printf("False\n");
+    break;
+  case cJSON_True:
+    printf("True\n");
+    break;
+  case cJSON_Number:
+    printf("%g\n", item->valuedouble);
+    break;
+  case cJSON_String:
+    printf("%s\n", item->valuestring);
+    break;
   }
 
   return item;
@@ -226,7 +227,8 @@ Run_Params* read_parameters(char* file_name) {
   
   char* masses_file = retrieve_item(root, default_root, "masses_file")->valuestring;
   params->masses = load_matrix(masses_file, params->n_particles, 1, 0);
-
+  
+  printf("NOW VELOCITY\n\n\n");
   item = cJSON_GetObjectItem(root, "start_velocities");
   if(!item) {
     unsigned int velocity_seed = (unsigned int) retrieve_item(root, default_root, "velocity_seed")->valueint;

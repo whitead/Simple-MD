@@ -14,8 +14,10 @@ import matplotlib
 matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
+print(md.temperature)
 plt.plot(md.out_times, md.temperature)
 plt.axhline(y=np.mean(md.temperature))
 plt.savefig('temperature.png')
 
 
+md.clean_files()

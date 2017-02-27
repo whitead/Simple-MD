@@ -2,7 +2,7 @@
     "steps": 2500,
     "time_step": 0.01,
     "temperature": 1,
-    "velocity_seed": 456415615,
+    "velocity_seed2": 456415615,
     "anderson_nu": 0.1,
     "bussi_taut": 0.1,
     "white_mass": 1,

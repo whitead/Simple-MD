@@ -44,7 +44,7 @@ class SimpleMD:
                            'com_remove_period':1000,
                            #this is the initial velocity temperature if NVE is chosen
                            'temperature':0, 
-                           'print_period':max(1, (steps / 100)),
+                           'print_period':max(1, (steps / 1000)),
                            'masses_file':self.prefix + os.sep + 'masses.txt' }
 
         self.exePrefix = exePrefix

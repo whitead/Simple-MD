@@ -7,7 +7,7 @@ double thermostat(double temperature, double time_step, void* thermostat_paramet
   White_Params* params = (White_Params*) thermostat_parameters;
 
   unsigned int i, j, ndeg;
-  double etemp, kenergy, dgdt, sdot;
+  double etemp, kenergy, dgdt;
   kenergy = 0;
 
 
@@ -36,22 +36,25 @@ double thermostat(double temperature, double time_step, void* thermostat_paramet
   //Removed COM is reason for -n_dims
   ndeg = (n_particles * n_dims - n_dims);
 
-  params->sdot += (kenergy - 0.5 * temperature * ndeg) * time_step;
+  params->sdot = -(kenergy - 0.5 * temperature * ndeg - params->s) * time_step;
+  //params->sdot = (kenergy - 0.5 * temperature * ndeg) * time_step;
+  //params->sdot = params->sdot * 9. / 10 + (kenergy - 0.5 * temperature * ndeg) / 10;
   //params->s += (params->sdot + dgdt - params->s) * time_step / params->mass;
-  //params->s += (params->sdot) * time_step / params->mass;
-  params->s += (params->sdot - params->s) * time_step / params->mass;
+  params->s += (params->sdot) * time_step / params->mass;
+  //params->s += (params->sdot - params->s) * time_step / params->mass;
+  //params->s += (params->sdot - params->s) * time_step / params->mass;
 
 
-  //update velocities
+  //update forces
 #pragma omp parallel for
   for(i = 0; i < n_particles; i++) {
     for(j = 0; j < n_dims; j++) {
-      velocities[i * n_dims + j] *= (1);// + params->s / ndeg);
+      velocities[i * n_dims + j] *= (1 + params->s / ndeg);
     }
   }
 
 
-  return params->s;
+  return (1 + params->s / ndeg);
 }
 
 void* build_white(unsigned int seed, double mass) {

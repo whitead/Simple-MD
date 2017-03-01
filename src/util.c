@@ -228,7 +228,6 @@ Run_Params* read_parameters(char* file_name) {
   char* masses_file = retrieve_item(root, default_root, "masses_file")->valuestring;
   params->masses = load_matrix(masses_file, params->n_particles, 1, 0);
   
-  printf("NOW VELOCITY\n\n\n");
   item = cJSON_GetObjectItem(root, "start_velocities");
   if(!item) {
     unsigned int velocity_seed = (unsigned int) retrieve_item(root, default_root, "velocity_seed")->valueint;

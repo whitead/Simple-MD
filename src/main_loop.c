@@ -55,7 +55,7 @@ int main_loop(Run_Params* params){
 
     //thermostat
 #ifdef THERMOSTAT
-    therm_conserved += thermostat(params->temperature, params->time_step, params->thermostat_parameters, positions, velocities, forces, params->masses, params->n_dims, params->n_particles);
+    therm_conserved = thermostat(params->temperature, params->time_step, params->thermostat_parameters, positions, velocities, forces, params->masses, params->n_dims, params->n_particles);
 #endif
 
     //calculate important quantities
@@ -76,7 +76,7 @@ int main_loop(Run_Params* params){
       log_array(params->forces_file, forces, params->n_dims, params->n_particles, true);
 
     if(i % params->print_period == 0) {
-      printf("%12d %12g %12g %12g %12g %12g %12g\n", i, i * params->time_step, insta_temperature, penergy, kenergy, penergy + kenergy, penergy + kenergy - therm_conserved);
+      printf("%12d %12g %12g %12g %12g %12g %12g\n", i, i * params->time_step, insta_temperature, penergy, kenergy, penergy + kenergy, therm_conserved);
     }
   }
 
